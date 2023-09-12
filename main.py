@@ -4,7 +4,7 @@ import logging
 import logging.handlers as handlers
 import random
 import sys
-import os  # Added for platform-independent file paths
+import os
 from pathlib import Path
 
 from src import (
@@ -24,19 +24,19 @@ POINTS_COUNTER = 0
 
 
 def main():
-    setup_logging()  # Renamed setupLogging to setup_logging
-    args = argument_parser()  # Renamed argumentParser to argument_parser
+    setup_logging()
+    args = argument_parser()
     notifier = Notifier(args)
-    setup_logging(args.verbosenotifs, notifier)  # Removed the duplicate setup_logging
-    loaded_accounts = setup_accounts()  # Renamed setupAccounts to setup_accounts
+    setup_logging(args.verbosenotifs, notifier)
+    loaded_accounts = setup_accounts()
     for current_account in loaded_accounts:
         try:
-            execute_bot(current_account, notifier, args)  # Renamed executeBot to execute_bot
+            execute_bot(current_account, notifier, args)
         except Exception as e:
             logging.exception(f"{e.__class__.__name__}: {e}")
 
 
-def setup_logging(verbose_notifs=False, notifier=None):  # Removed args parameter
+def setup_logging(verbose_notifs=False, notifier=None):
     ColoredFormatter.verbose_notifs = verbose_notifs
     ColoredFormatter.notifier = notifier
 
@@ -52,7 +52,7 @@ def setup_logging(verbose_notifs=False, notifier=None):  # Removed args paramete
         format=format,
         handlers=[
             handlers.TimedRotatingFileHandler(
-                os.path.join(log_dir, "activity.log"),  # Used os.path.join
+                os.path.join(log_dir, "activity.log"),
                 when="midnight",
                 interval=1,
                 backupCount=2,
@@ -63,7 +63,7 @@ def setup_logging(verbose_notifs=False, notifier=None):  # Removed args paramete
     )
 
 
-def argument_parser():  # Renamed argumentParser to argument_parser
+def argument_parser():
     parser = argparse.ArgumentParser(description="Microsoft Rewards Farmer")
     parser.add_argument(
         "-v", "--visible", action="store_true", help="Optional: Visible browser"
@@ -103,10 +103,18 @@ def argument_parser():  # Renamed argumentParser to argument_parser
         action="store_true",
         help="Optional: Send all the logs to discord/telegram",
     )
+    parser.add_argument(
+        "--currency",
+        help="Converts your points into your preferred currency.",
+        choices=["EUR", "USD", "AUD", "INR", "GBP", "CAD", "JPY",
+                 "CHF", "NZD", "ZAR", "BRL", "CNY", "HKD", "SGD", "THB"],
+        action="store",
+        required=False,
+    )
     return parser.parse_args()
 
 
-def banner_display():  # Renamed bannerDisplay to banner_display
+def banner_display():
     farmer_banner = """
     ███╗   ███╗███████╗    ███████╗ █████╗ ██████╗ ███╗   ███╗███████╗██████╗
     ████╗ ████║██╔════╝    ██╔════╝██╔══██╗██╔══██╗████╗ ████║██╔════╝██╔══██╗
@@ -120,7 +128,7 @@ def banner_display():  # Renamed bannerDisplay to banner_display
     )
 
 
-def setup_accounts():  # Renamed setupAccounts to setup_accounts
+def setup_accounts():
     account_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "accounts.json"))
     if not os.path.exists(account_path):
         with open(account_path, "w", encoding="utf-8") as account_file:
@@ -134,7 +142,7 @@ def setup_accounts():  # Renamed setupAccounts to setup_accounts
     [ACCOUNT] A new file has been created, please edit with your credentials and save.
     """
         logging.warning(no_accounts_notice)
-        sys.exit()  # Replaced exit() with sys.exit()
+        sys.exit()
 
     with open(account_path, "r", encoding="utf-8") as account_file:
         loaded_accounts = json.load(account_file)
@@ -142,7 +150,7 @@ def setup_accounts():  # Renamed setupAccounts to setup_accounts
     return loaded_accounts
 
 
-def execute_bot(current_account, notifier, args):  # Renamed executeBot to execute_bot
+def execute_bot(current_account, notifier, args):
     logging.info(
         f'********************{current_account.get("username", "")}********************'
     )
@@ -176,25 +184,55 @@ def execute_bot(current_account, notifier, args):  # Renamed executeBot to execu
                 )
         desktop_browser.closeBrowser()
 
-        logging.info(
-            f"[POINTS] You have earned {desktop_browser.utils.formatNumber(account_points_counter - starting_points)} points today !"
+        total_earned = account_points_counter - starting_points
+        total_overall = account_points_counter
+
+        message = (
+            f"[POINTS] You have earned {desktop_browser.utils.formatNumber(total_earned)} points today !\n"
+            f"[POINTS] You are now at {desktop_browser.utils.formatNumber(total_overall)} points !\n"
         )
-        logging.info(
-            f"[POINTS] You are now at {desktop_browser.utils.formatNumber(account_points_counter)} points !\n"
-        )
+
+        if args.currency:
+            message += f"💵 Total earned points: {total_earned} " \
+                       f"({format_currency(total_earned, args.currency)}) \n"
+            message += f"💵 Total Overall points: {total_overall} " \
+                       f"({format_currency(total_overall, args.currency)})"
+
+        logging.info(message)
 
         notifier.send(
             "\n".join(
                 [
                     "Microsoft Rewards Farmer",
                     f"Account: {current_account.get('username', '')}",
-                    f"⭐️ Points earned today: {desktop_browser.utils.formatNumber(account_points_counter - starting_points)}",
-                    f"🏅 Total points: {desktop_browser.utils.formatNumber(account_points_counter)}",
+                    f"⭐️ Points earned today: {desktop_browser.utils.formatNumber(total_earned)}",
+                    f"🏅 Total points: {desktop_browser.utils.formatNumber(total_overall)}",
                 ]
             )
         )
 
 
+def format_currency(points, currency):
+    convert = {
+        "EUR": {"rate": 1500, "symbol": "€"},
+        "AUD": {"rate": 1350, "symbol": "AU$"},
+        "INR": {"rate": 16, "symbol": "₹"},
+        "USD": {"rate": 1300, "symbol": "$"},
+        "GBP": {"rate": 1700, "symbol": "£"},
+        "CAD": {"rate": 1000, "symbol": "CA$"},
+        "JPY": {"rate": 12, "symbol": "¥"},
+        "CHF": {"rate": 1400, "symbol": "CHF"},
+        "NZD": {"rate": 1200, "symbol": "NZ$"},
+        "ZAR": {"rate": 90, "symbol": "R"},
+        "BRL": {"rate": 250, "symbol": "R$"},
+        "CNY": {"rate": 200, "symbol": "¥"},
+        "HKD": {"rate": 170, "symbol": "HK$"},
+        "SGD": {"rate": 950, "symbol": "S$"},
+        "THB": {"rate": 40, "symbol": "฿"}
+    }
+    return f"{convert[currency]['symbol']}{points / convert[currency]['rate']:0.02f}"
+
+
 if __name__ == "__main__":
-    banner_display()  # Renamed bannerDisplay to banner_display
+    banner_display()
     main()
