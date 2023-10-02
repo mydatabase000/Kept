@@ -4,19 +4,9 @@ import logging
 import logging.handlers as handlers
 import random
 import sys
-import os
 from pathlib import Path
 
-from src import (
-    Browser,
-    DailySet,
-    GamingTab,
-    Login,
-    MorePromotions,
-    PunchCards,
-    Searches,
-)
-from src.constants import VERSION
+from src import Browser, DailySet, Login, MorePromotions, PunchCards, Searches
 from src.loggingColoredFormatter import ColoredFormatter
 from src.notifier import Notifier
 
@@ -24,19 +14,18 @@ POINTS_COUNTER = 0
 
 
 def main():
-    setup_logging()
-    args = argument_parser()
+    args = argumentParser()
     notifier = Notifier(args)
-    setup_logging(args.verbosenotifs, notifier)
-    loaded_accounts = setup_accounts()
-    for current_account in loaded_accounts:
+    setupLogging(args.verbosenotifs, notifier)
+    loadedAccounts = setupAccounts()
+    for currentAccount in loadedAccounts:
         try:
-            execute_bot(current_account, notifier, args)
+            executeBot(currentAccount, notifier, args)
         except Exception as e:
             logging.exception(f"{e.__class__.__name__}: {e}")
 
 
-def setup_logging(verbose_notifs=False, notifier=None):
+def setupLogging(verbose_notifs, notifier):
     ColoredFormatter.verbose_notifs = verbose_notifs
     ColoredFormatter.notifier = notifier
 
@@ -44,15 +33,14 @@ def setup_logging(verbose_notifs=False, notifier=None):
     terminalHandler = logging.StreamHandler(sys.stdout)
     terminalHandler.setFormatter(ColoredFormatter(format))
 
-    log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "logs"))
-    os.makedirs(log_dir, exist_ok=True)
+    (Path(__file__).resolve().parent / "logs").mkdir(parents=True, exist_ok=True)
 
     logging.basicConfig(
         level=logging.INFO,
         format=format,
         handlers=[
             handlers.TimedRotatingFileHandler(
-                os.path.join(log_dir, "activity.log"),
+                "logs/activity.log",
                 when="midnight",
                 interval=1,
                 backupCount=2,
@@ -63,8 +51,8 @@ def setup_logging(verbose_notifs=False, notifier=None):
     )
 
 
-def argument_parser():
-    parser = argparse.ArgumentParser(description="Microsoft Rewards Farmer")
+def argumentParser() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="MS Rewards Farmer")
     parser.add_argument(
         "-v", "--visible", action="store_true", help="Optional: Visible browser"
     )
@@ -103,136 +91,80 @@ def argument_parser():
         action="store_true",
         help="Optional: Send all the logs to discord/telegram",
     )
-    parser.add_argument(
-        "--currency",
-        help="Converts your points into your preferred currency.",
-        choices=["EUR", "USD", "AUD", "INR", "GBP", "CAD", "JPY",
-                 "CHF", "NZD", "ZAR", "BRL", "CNY", "HKD", "SGD", "THB"],
-        action="store",
-        required=False,
-    )
     return parser.parse_args()
 
 
-def banner_display():
-    farmer_banner = """
-    ███╗   ███╗███████╗    ███████╗ █████╗ ██████╗ ███╗   ███╗███████╗██████╗
-    ████╗ ████║██╔════╝    ██╔════╝██╔══██╗██╔══██╗████╗ ████║██╔════╝██╔══██╗
-    ██╔████╔██║███████╗    █████╗  ███████║██████╔╝██╔████╔██║█████╗  ██████╔╝
-    ██║╚██╔╝██║╚════██║    ██╔══╝  ██╔══██║██╔══██╗██║╚██╔╝██║██╔══╝  ██╔══██╗
-    ██║ ╚═╝ ██║███████║    ██║     ██║  ██║██║  ██║██║ ╚═╝ ██║███████╗██║  ██║
-    ╚═╝     ╚═╝╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝"""
-    logging.error(farmer_banner)
-    logging.warning(
-        f"        by Charles Bel (@charlesbel)               version {VERSION}\n"
-    )
-
-
-def setup_accounts():
-    account_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "accounts.json"))
-    if not os.path.exists(account_path):
-        with open(account_path, "w", encoding="utf-8") as account_file:
-            account_file.write(
-                json.dumps(
-                    [{"username": "Your Email", "password": "Your Password"}], indent=4
-                )
-            )
-        no_accounts_notice = """
+def setupAccounts() -> dict:
+    accountPath = Path(__file__).resolve().parent / "accounts.json"
+    if not accountPath.exists():
+        accountPath.write_text(
+            json.dumps(
+                [{"username": "Your Email", "password": "Your Password"}], indent=4
+            ),
+            encoding="utf-8",
+        )
+        noAccountsNotice = """
     [ACCOUNT] Accounts credential file "accounts.json" not found.
     [ACCOUNT] A new file has been created, please edit with your credentials and save.
     """
-        logging.warning(no_accounts_notice)
-        sys.exit()
-
-    with open(account_path, "r", encoding="utf-8") as account_file:
-        loaded_accounts = json.load(account_file)
-    random.shuffle(loaded_accounts)
-    return loaded_accounts
+        logging.warning(noAccountsNotice)
+        exit()
+    loadedAccounts = json.loads(accountPath.read_text(encoding="utf-8"))
+    random.shuffle(loadedAccounts)
+    return loadedAccounts
 
 
-def execute_bot(current_account, notifier, args):
+def executeBot(currentAccount, notifier: Notifier, args: argparse.Namespace):
     logging.info(
-        f'********************{current_account.get("username", "")}********************'
+        f'********************{ currentAccount.get("username", "") }********************'
     )
-    with Browser(mobile=False, account=current_account, args=args) as desktop_browser:
-        account_points_counter = Login(desktop_browser).login()
-        starting_points = account_points_counter
+    with Browser(mobile=False, account=currentAccount, args=args) as desktopBrowser:
+        accountPointsCounter = Login(desktopBrowser).login()
+        startingPoints = accountPointsCounter
         logging.info(
-            f"[POINTS] You have {desktop_browser.utils.formatNumber(account_points_counter)} points on your account !"
+            f"[POINTS] You have {desktopBrowser.utils.formatNumber(accountPointsCounter)} points on your account"
         )
-        GamingTab(desktop_browser).completeGamingTab()
-        DailySet(desktop_browser).completeDailySet()
-        PunchCards(desktop_browser).completePunchCards()
-        MorePromotions(desktop_browser).completeMorePromotions()
+        DailySet(desktopBrowser).completeDailySet()
+        PunchCards(desktopBrowser).completePunchCards()
+        MorePromotions(desktopBrowser).completeMorePromotions()
         (
-            remaining_searches,
-            remaining_searches_m,
-        ) = desktop_browser.utils.getRemainingSearches()
-        if remaining_searches != 0:
-            account_points_counter = Searches(desktop_browser).bingSearches(
-                remaining_searches
+            remainingSearches,
+            remainingSearchesM,
+        ) = desktopBrowser.utils.getRemainingSearches()
+        if remainingSearches != 0:
+            accountPointsCounter = Searches(desktopBrowser).bingSearches(
+                remainingSearches
             )
 
-        if remaining_searches_m != 0:
-            desktop_browser.closeBrowser()
+        if remainingSearchesM != 0:
+            desktopBrowser.closeBrowser()
             with Browser(
-                mobile=True, account=current_account, args=args
-            ) as mobile_browser:
-                account_points_counter = Login(mobile_browser).login()
-                account_points_counter = Searches(mobile_browser).bingSearches(
-                    remaining_searches_m
+                mobile=True, account=currentAccount, args=args
+            ) as mobileBrowser:
+                accountPointsCounter = Login(mobileBrowser).login()
+                accountPointsCounter = Searches(mobileBrowser).bingSearches(
+                    remainingSearchesM
                 )
-        desktop_browser.closeBrowser()
+        desktopBrowser.closeBrowser()
 
-        total_earned = account_points_counter - starting_points
-        total_overall = account_points_counter
-
-        message = (
-            f"[POINTS] You have earned {desktop_browser.utils.formatNumber(total_earned)} points today !\n"
-            f"[POINTS] You are now at {desktop_browser.utils.formatNumber(total_overall)} points !\n"
+        logging.info(
+            f"[POINTS] You have earned {desktopBrowser.utils.formatNumber(accountPointsCounter - startingPoints)} points today !"
         )
-
-        if args.currency:
-            message += f"💵 Total earned points: {total_earned} " \
-                       f"({format_currency(total_earned, args.currency)}) \n"
-            message += f"💵 Total Overall points: {total_overall} " \
-                       f"({format_currency(total_overall, args.currency)})"
-
-        logging.info(message)
+        logging.info(
+            f"[POINTS] You are now at {desktopBrowser.utils.formatNumber(accountPointsCounter)} points !\n"
+        )
 
         notifier.send(
             "\n".join(
                 [
-                    "Microsoft Rewards Farmer",
-                    f"Account: {current_account.get('username', '')}",
-                    f"⭐️ Points earned today: {desktop_browser.utils.formatNumber(total_earned)}",
-                    f"🏅 Total points: {desktop_browser.utils.formatNumber(total_overall)}",
+                    "MS Rewards Farmer",
+                    f"Account: {currentAccount.get('username', '')}",
+                    f"⭐️ Points earned today: {desktopBrowser.utils.formatNumber(accountPointsCounter - startingPoints)}",
+                    f"🏅 Total points: {desktopBrowser.utils.formatNumber(accountPointsCounter)}",
                 ]
             )
         )
 
 
-def format_currency(points, currency):
-    convert = {
-        "EUR": {"rate": 1500, "symbol": "€"},
-        "AUD": {"rate": 1350, "symbol": "AU$"},
-        "INR": {"rate": 16, "symbol": "₹"},
-        "USD": {"rate": 1300, "symbol": "$"},
-        "GBP": {"rate": 1700, "symbol": "£"},
-        "CAD": {"rate": 1000, "symbol": "CA$"},
-        "JPY": {"rate": 12, "symbol": "¥"},
-        "CHF": {"rate": 1400, "symbol": "CHF"},
-        "NZD": {"rate": 1200, "symbol": "NZ$"},
-        "ZAR": {"rate": 90, "symbol": "R"},
-        "BRL": {"rate": 250, "symbol": "R$"},
-        "CNY": {"rate": 200, "symbol": "¥"},
-        "HKD": {"rate": 170, "symbol": "HK$"},
-        "SGD": {"rate": 950, "symbol": "S$"},
-        "THB": {"rate": 40, "symbol": "฿"}
-    }
-    return f"{convert[currency]['symbol']}{points / convert[currency]['rate']:0.02f}"
-
-
 if __name__ == "__main__":
-    banner_display()
     main()

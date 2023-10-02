@@ -7,6 +7,7 @@ from datetime import date, timedelta
 import requests
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
 from src.browser import Browser
 
@@ -49,17 +50,16 @@ class Searches:
 
     def bingSearches(self, numberOfSearches: int, pointsCounter: int = 0):
         logging.info(
-            "[BING] "
-            + f"Starting {self.browser.browserType.capitalize()} Edge Bing searches...",
+            f"[BING] Starting {self.browser.browserType.capitalize()} Edge Bing searches..."
         )
 
-        i = 0
         search_terms = self.getGoogleTrends(numberOfSearches)
         self.webdriver.get("https://bing.com")
 
+        i = 0
         for word in search_terms:
             i += 1
-            logging.info("[BING] " + f"{i}/{numberOfSearches}")
+            logging.info(f"[BING] {i}/{numberOfSearches}")
             points = self.bingSearch(word)
             if points <= pointsCounter:
                 relatedTerms = self.getRelatedTerms(word)[:2]
@@ -87,6 +87,14 @@ class Searches:
                 searchbar.send_keys(word)
                 searchbar.submit()
                 time.sleep(random.randint(10, 15))
+
+                # Scroll down after the search (adjust the number of scrolls as needed)
+                for _ in range(3):  # Scroll down 3 times
+                    self.webdriver.execute_script(
+                        "window.scrollTo(0, document.body.scrollHeight);"
+                    )
+                    time.sleep(random.uniform(1, 2))  # Random wait between scrolls
+
                 return self.browser.utils.getBingAccountPoints()
             except TimeoutException:
                 if i == 5:
@@ -95,7 +103,7 @@ class Searches:
                         + "Cancelling mobile searches due to too many retries."
                     )
                     return self.browser.utils.getBingAccountPoints()
-
+                self.browser.utils.tryDismissAllMessages()
                 logging.error("[BING] " + "Timeout, retrying in 5 seconds...")
                 time.sleep(5)
                 i += 1

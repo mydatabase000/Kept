@@ -85,7 +85,7 @@ class Utils:
                 tries = 0
                 time.sleep(5)
             else:
-                return elem        
+                return elem
 
     def resetTabs(self):
         try:
@@ -143,26 +143,20 @@ class Utils:
     def getBingInfo(self):
         cookieJar = self.webdriver.get_cookies()
         cookies = {cookie["name"]: cookie["value"] for cookie in cookieJar}
-        tries = 0
         maxTries = 5
-        while tries < maxTries:
+        for _ in range(maxTries):
             with contextlib.suppress(Exception):
                 response = requests.get(
                     "https://www.bing.com/rewards/panelflyout/getuserinfo",
                     cookies=cookies,
                 )
                 if response.status_code == requests.codes.ok:
-                    data = response.json()
-                    return data
-                else:
-                    pass
-            tries += 1
+                    return response.json()
             time.sleep(1)
         return None
 
     def checkBingLogin(self):
-        data = self.getBingInfo()
-        if data:
+        if data := self.getBingInfo():
             return data["userInfo"]["isRewardsUser"]
         else:
             return False
@@ -171,11 +165,7 @@ class Utils:
         return self.getDashboardData()["userStatus"]["availablePoints"]
 
     def getBingAccountPoints(self) -> int:
-        data = self.getBingInfo()
-        if data:
-            return data["userInfo"]["balance"]
-        else:
-            return 0
+        return data["userInfo"]["balance"] if (data := self.getBingInfo()) else 0
 
     def tryDismissAllMessages(self):
         buttons = [
@@ -185,11 +175,17 @@ class Utils:
             (By.ID, "iLooksGood"),
             (By.ID, "idSIButton9"),
             (By.CSS_SELECTOR, ".ms-Button.ms-Button--primary"),
+            (By.ID, "bnp_btn_accept"),
         ]
         result = False
         for button in buttons:
             try:
-                self.webdriver.find_element(button[0], button[1]).click()
+                elements = self.webdriver.find_elements(button[0], button[1])
+                try:
+                    for element in elements:
+                        element.click()
+                except Exception:  # pylint: disable=broad-except
+                    continue
                 result = True
             except Exception:  # pylint: disable=broad-except
                 continue
@@ -261,8 +257,7 @@ class Utils:
         configFile = sessionPath.joinpath("config.json")
         if configFile.exists():
             with open(configFile, "r") as f:
-                config = json.load(f)
-                return config
+                return json.load(f)
         else:
             return {}
 
