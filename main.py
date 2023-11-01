@@ -42,13 +42,16 @@ def main():
             # Update the previous day's points data
             previous_points_data[account_name] = earned_points
 
-            print(f"[POINTS] data for '{account_name}' appended to the file.")
+            logging.info(
+                f"[POINTS] Data for '{account_name}' appended to the file."
+            )
         except Exception as e:
+            notifier.send("⚠️ Error occurred, please check the log", currentAccount)
             logging.exception(f"{e.__class__.__name__}: {e}")
 
     # Save the current day's points data for the next day in the "logs" folder
     save_previous_points_data(previous_points_data)
-    print("Points data saved for the next day.")
+    logging.info("[POINTS] Data saved for the next day.")
 
 def log_daily_points_to_csv(date, earned_points, points_difference):
     logs_directory = Path(__file__).resolve().parent / "logs"
@@ -167,6 +170,11 @@ def executeBot(currentAccount, notifier: Notifier, args: argparse.Namespace):
     logging.info(
         f'********************{ currentAccount.get("username", "") }********************'
     )
+    accountPointsCounter = 0
+    remainingSearches = 0
+    remainingSearchesM = 0
+    startingPoints = 0
+
     with Browser(mobile=False, account=currentAccount, args=args) as desktopBrowser:
         accountPointsCounter = Login(desktopBrowser).login()
         startingPoints = accountPointsCounter
@@ -193,37 +201,49 @@ def executeBot(currentAccount, notifier: Notifier, args: argparse.Namespace):
         pause_after_search = random.uniform(1.0, 5.0)  # Random pause between 1 to 5 seconds
         time.sleep(pause_after_search)
 
-        if remainingSearchesM != 0:
-            desktopBrowser.closeBrowser()
-            with Browser(
-                mobile=True, account=currentAccount, args=args
-            ) as mobileBrowser:
-                accountPointsCounter = Login(mobileBrowser).login()
-                accountPointsCounter = Searches(mobileBrowser).bingSearches(
-                    remainingSearchesM
-                )
-
+        desktopBrowser.utils.goHome()
+        goalPoints = desktopBrowser.utils.getGoalPoints()
+        goalTitle = desktopBrowser.utils.getGoalTitle()
         desktopBrowser.closeBrowser()
-
-        logging.info(
-            f"[POINTS] You have earned {desktopBrowser.utils.formatNumber(accountPointsCounter - startingPoints)} points today !"
-        )
-        logging.info(
-            f"[POINTS] You are now at {desktopBrowser.utils.formatNumber(accountPointsCounter)} points !\n"
-        )
-
-        notifier.send(
-            "\n".join(
-                [
-                    "🏅 MS Rewards Farmer",
-                    f"👤 Account: {currentAccount.get('username', '')}",
-                    f"⭐️ Points earned today: {desktopBrowser.utils.formatNumber(accountPointsCounter - startingPoints)}",
-                    f"💰 Total points: {desktopBrowser.utils.formatNumber(accountPointsCounter)}",
-                ]
+    
+    if remainingSearchesM != 0:
+        desktopBrowser.closeBrowser()
+        with Browser(mobile=True, account=currentAccount, args=args) as mobileBrowser:
+            accountPointsCounter = Login(mobileBrowser).login()
+            accountPointsCounter = Searches(mobileBrowser).bingSearches(
+                remainingSearchesM
             )
-        )
 
-        return accountPointsCounter
+            mobileBrowser.utils.goHome()
+            goalPoints = mobileBrowser.utils.getGoalPoints()
+            goalTitle = mobileBrowser.utils.getGoalTitle()
+            mobileBrowser.closeBrowser()
+
+    logging.info(
+        f"[POINTS] You have earned {desktopBrowser.utils.formatNumber(accountPointsCounter - startingPoints)} points today !"
+    )
+    logging.info(
+        f"[POINTS] You are now at {desktopBrowser.utils.formatNumber(accountPointsCounter)} points !"
+    )
+    goalNotifier = ""
+    if goalPoints > 0:
+        logging.info(
+            f"[POINTS] You are now at {(desktopBrowser.utils.formatNumber((accountPointsCounter / goalPoints) * 100))}% of your goal ({goalTitle}) !\n"
+        )
+        goalNotifier = f"🎯 Goal reached: {(desktopBrowser.utils.formatNumber((accountPointsCounter / goalPoints) * 100))}% ({goalTitle})"
+
+    notifier.send(
+        "\n".join(
+            [
+                f"⭐️ Points earned today: {desktopBrowser.utils.formatNumber(accountPointsCounter - startingPoints)}",
+                f"💰 Total points: {desktopBrowser.utils.formatNumber(accountPointsCounter)}",
+                goalNotifier,
+            ]
+        ),
+        currentAccount
+    )
+    
+    return accountPointsCounter
 
 
 def export_points_to_csv(points_data):
@@ -246,8 +266,7 @@ def load_previous_points_data():
     logs_directory = Path(__file__).resolve().parent / "logs"
     try:
         with open(logs_directory / "previous_points_data.json", "r") as file:
-            data = json.load(file)
-            return data
+            return json.load(file)
     except FileNotFoundError:
         return {}
 
