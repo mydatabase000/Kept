@@ -1,8 +1,4 @@
 ### A simple bot that uses Selenium to farm M$ Rewards in Python
-<<<<<<< HEAD
-
-=======
->>>>>>> 6b914e3cb514125d604c180a8d148d0f49dbf632
 ---
 
 ![Static Badge](https://img.shields.io/badge/Made_in-python-violet?style=for-the-badge)
@@ -15,21 +11,6 @@
 
 > [!WARNING]
 > Use it at your own risk, M$ may ban your account (and I would not be responsible for it)
-<<<<<<< HEAD
->
-> Do not run more than one account at a time.
->
-> Do not use more than one phone number per 5 accounts.
->
-> Do not redeem more than one reward per day.
-
----
-
-#### Group Chat - [Telegram](https://t.me/klept0_MS_Rewards_Farmer/)
-
-#### Original bot by [@charlesbel](https://github.com/charlesbel) - refactored/updated/maintained by [@klept0](https://github.com/klept0) and a community of volunteers.
-
-=======
 > 
 > Do not run more than one account at a time.
 > 
@@ -39,7 +20,6 @@
 ---
 #### Group Chat - [Telegram](https://t.me/klept0_MS_Rewards_Farmer/)
 #### Original bot by [@charlesbel](https://github.com/charlesbel) - refactored/updated/maintained by [@klept0](https://github.com/klept0) and a community of volunteers.
->>>>>>> 6b914e3cb514125d604c180a8d148d0f49dbf632
 #### Docker version by [@LtCMDstone](https://github.com/LtCMDstone) - [here](https://github.com/LtCMDstone/MS-Rewards-Farmer-Docker)
 
 ---
@@ -57,11 +37,7 @@
 
 3. (Windows Only) Make sure Visual C++ redistributable DLLs are installed
 
-<<<<<<< HEAD
-   If they're not, install the current "vc_redist.exe" from this [link](https://learn.microsoft.com/en-GB/cpp/windows/latest-supported-vc-redist?view=msvc-170) and reboot your computer
-=======
    If they're not, install the current "vc_redist.exe" from this [link](https://learn.microsoft.com/en-GB/cpp/windows/latest-supported-vc-redist?view=msvc-170) and reboot your computer 
->>>>>>> 6b914e3cb514125d604c180a8d148d0f49dbf632
 
 4. Edit the `accounts.json.sample` with your accounts credentials and rename it by removing `.sample` at the end.
 
@@ -97,20 +73,6 @@
 - -g/--geo to force a geolocation (ex: US)
 - -p/--proxy to add a proxy to the whole program, supports http/https/socks4/socks5 (overrides per-account proxy in accounts.json)
 
-<<<<<<< HEAD
-  `(ex: http://user:pass@host:port)`
-
-- -t/--telegram to add a telegram notification, requires Telegram Bot Token and Chat ID
-
-  `(ex: 123456789:ABCdefGhIjKlmNoPQRsTUVwxyZ 123456789)`
-
-- -d/--discord to add a discord notification, requires Discord Webhook URL
-
-  `(ex: https://discord.com/api/webhooks/123456789/ABCdefGhIjKlmNoPQRsTUVwxyZ)`
-
-- -p/--pushover to add pushover notifications, requires an app token and user key.
-  `(ex: 123456789:ABCdefGhIjKlmNoPQRsTUVwxyZ)`
-=======
   ```(ex: http://user:pass@host:port)```
 - -t/--telegram to add a telegram notification, requires Telegram Bot Token and Chat ID
 
@@ -118,17 +80,13 @@
 - -d/--discord to add a discord notification, requires Discord Webhook URL
 
   ```(ex: https://discord.com/api/webhooks/123456789/ABCdefGhIjKlmNoPQRsTUVwxyZ)```
->>>>>>> 6b914e3cb514125d604c180a8d148d0f49dbf632
+- -p/--pushover to add pushover notifications, requires an app token and user key.
+  `(ex: 123456789:ABCdefGhIjKlmNoPQRsTUVwxyZ)`  
 - -vn/--verbose notifications to notification listeners (Discord, Telegram)
 
 - -cv/--chromeversion to use a specifiv version of chrome
 
-<<<<<<< HEAD
-  `(ex: 118)`
-
-=======
   ```(ex: 118)```
->>>>>>> 6b914e3cb514125d604c180a8d148d0f49dbf632
 ---
 
 ## Features
@@ -141,7 +99,7 @@
 - Multi-Account Management
 - Session storing (3.0)
 - 2FA Support (3.0)
-- Notifications (discord, telegram) (3.0)
+- Notifications (discord, telegram, pushover) (3.0)
 - Proxy Support (3.0) - they need to be **high quality** proxies
 - Logs to CSV file for point tracking
 
