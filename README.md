@@ -81,6 +81,7 @@
 
   ```(ex: https://discord.com/api/webhooks/123456789/ABCdefGhIjKlmNoPQRsTUVwxyZ)```
 - -p/--pushover to add pushover notifications, requires an app token and user key.
+  
   `(ex: 123456789:ABCdefGhIjKlmNoPQRsTUVwxyZ)`  
 - -vn/--verbose notifications to notification listeners (Discord, Telegram)
 
