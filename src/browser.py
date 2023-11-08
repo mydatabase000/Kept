@@ -15,7 +15,23 @@ from src.utils import Utils
 
 class Browser:
     """WebDriver wrapper class."""
-
+    def giveMeProxy(self):
+        try:
+            with open("proxy.txt") as f:
+                line = str(random.choice(f.readlines())).strip().split(":")
+            if len(line) == 4:
+                output = f"{line[2]}:{line[3]}@{line[0]}:{line[1]}"
+            else:
+                output = f"{line[0]}:{line[1]}"
+            #print(output)
+            return {
+                "http": f"http://{output}",
+                "https": f"https://{output}",
+                "no_proxy": "localhost,127.0.0.1",
+            }
+        except (FileNotFoundError,IndexError):
+            return {}
+        
     def __init__(self, mobile: bool, account, args: Any) -> None:
         self.mobile = mobile
         self.browserType = "mobile" if mobile else "desktop"
@@ -24,6 +40,7 @@ class Browser:
         self.password = account["password"]
         self.localeLang, self.localeGeo = self.getCCodeLang(args.lang, args.geo)
         self.proxy = None
+        self.chromeversion = args.chromeversion
         if args.proxy:
             self.proxy = args.proxy
         elif account.get("proxy"):
@@ -74,7 +91,11 @@ class Browser:
                 "no_proxy": "localhost,127.0.0.1",
             }
 
+        if(self.chromeversion != None):
+            logging.info(f"Chrome version: {self.chromeversion}")
+            
         driver = webdriver.Chrome(
+            version_main=self.chromeversion,
             options=options,
             seleniumwire_options=seleniumwireOptions,
             user_data_dir=self.userDataDir.as_posix(),
