@@ -138,6 +138,15 @@ def argumentParser() -> argparse.Namespace:
         help="Optional: Discord Webhook URL (ex: https://discord.com/api/webhooks/123456789/ABCdefGhIjKlmNoPQRsTUVwxyZ)",
     )
     parser.add_argument(
+        "-p",
+        "--pushover",
+        metavar=("APP_TOKEN", "USER_KEY"),
+        nargs=2,
+        type=str,
+        default=None,
+        help="Optional: Pushover Token and User Key (ex: 12345678912345678912345678900, fhgjdkeisudhgthrlcvbnmxdfhaswe)",
+    )
+    parser.add_argument(
         "-vn",
         "--verbosenotifs",
         action="store_true",
