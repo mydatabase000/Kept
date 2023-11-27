@@ -87,7 +87,7 @@ class Searches:
                 searchbar.clear()
                 searchbar.send_keys(word)
                 searchbar.submit()
-                time.sleep(Utils.randomSeconds(10, 15))
+                time.sleep(Utils.randomSeconds(80, 120))
 
                 # Scroll down after the search (adjust the number of scrolls as needed)
                 for _ in range(3):  # Scroll down 3 times
